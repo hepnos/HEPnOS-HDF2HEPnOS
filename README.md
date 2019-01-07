@@ -7,10 +7,10 @@ and generate C++ code for classes representing data products.
 ## Dependencies
 
 HDF2HEPnOS requires the following dependencies.
-  * HDF5 with C++ API enabled
-  * Python 3.3 or greater
-  * h5py
-  * Jinja2
+* HDF5 with C++ API enabled
+* Python 3.3 or greater
+* h5py
+* Jinja2
 
 Those can be installed as follows using spack.
 ```
