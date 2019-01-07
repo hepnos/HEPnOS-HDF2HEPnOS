@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+import os
+import argparse
+import sys
+import h5py
+from jinja2 import Environment, FileSystemLoader
+
+def as_cpp_identifier(name):
+    """
+    Converts the provided name into a valid C++ identifier
+    by replacing '.', '/', and ' ' with a '_'.
+    """
+    if(name[0] == '/'):
+        name = name[1:]
+    return name.replace('.','_').replace('/','_').replace(' ','_')
+
+"""
+Table converting dataset types from h5py into valid C++ types.
+"""
+h5type_to_cpp = {
+    'float32' : 'float',
+    'float64' : 'double',
+    'int8'    : 'std::int8_t',
+    'int16'   : 'std::int16_t',
+    'int32'   : 'std::int32_t',
+    'int64'   : 'std::int64_t',
+    'uint8'   : 'std::uint8_t',
+    'uint16'  : 'std::uint16_t',
+    'uint32'  : 'std::uint32_t',
+    'uint64'  : 'std::uint64_t'
+}
+
+"""
+Table providing the size of each type, used for optimization purpose
+when building the layour of generated classes.
+"""
+typesizes = {
+    'float'         : 4,
+    'double'        : 8,
+    'std::int8_t'   : 1,
+    'std::int16_t'  : 2,
+    'std::int32_t'  : 4,
+    'std::int64_t'  : 8,
+    'std::uint8_t'  : 1,
+    'std::uint16_t' : 2,
+    'std::uint32_t' : 4,
+    'std::uint64_t' : 8
+}
+
+"""
+Table converting C++ types into HDF5-C++ types.
+"""
+cpptype_to_h5cpp = {
+    'float'         : 'H5::PredType::NATIVE_FLOAT',
+    'double'        : 'H5::PredType::NATIVE_DOUBLE',
+    'std::int8_t'   : 'H5::PredType::NATIVE_INT8',
+    'std::int16_t'  : 'H5::PredType::NATIVE_INT16',
+    'std::int32_t'  : 'H5::PredType::NATIVE_INT32',
+    'std::int64_t'  : 'H5::PredType::NATIVE_INT64',
+    'std::uint8_t'  : 'H5::PredType::NATIVE_UINT8',
+    'std::uint16_t' : 'H5::PredType::NATIVE_UINT16',
+    'std::uint32_t' : 'H5::PredType::NATIVE_UINT32',
+    'std::uint64_t' : 'H5::PredType::NATIVE_UINT64'
+}
+
+class Member:
+    """
+    The Member class represents a column (i.e. a dataset) in the HDF5 file,
+    and will become a member variable in the generated C++ structure.
+    """
+
+    def __init__(self, name, cpptype):
+        self.name = name
+        self.cpptype = cpptype
+        self.h5type = cpptype_to_h5cpp[cpptype]
+
+class Table:
+    """
+    The Table class represents a group in the HDF5 file. Each dataset in
+    this group (except for the run, subrun, and event datasets) ought to
+    become members of the generated C++ structure.
+    """
+
+    def __init__(self, name):
+        self.name = name
+        self.members = []
+
+    def add_column(self, name, cpptype):
+        self.members.append(Member(name, cpptype))
+        self.members = sorted(self.members, key=lambda x: -typesizes[x.cpptype])
+
+# ==================================================================== #
+# HDF5 navigation
+# ==================================================================== #
+def process_group(group):
+    print("===> Processing "+group.name)
+    datasets = []
+    for dsname in group:
+        datasets.append(dsname)
+    datasets.remove('run')
+    datasets.remove('subrun')
+    datasets.remove('evt')
+    table = Table(group.name)
+    for dsname in datasets:
+        cpptype = h5type_to_cpp[str(group[dsname].dtype)]
+        table.add_column(dsname, cpptype)
+    return table
+
+def parse_hdf5(filename):
+    f = h5py.File(filename, "r")
+    tables = []
+    for group in f:
+        t = process_group(f[group])
+        tables.append(t)
+    f.close()
+    return tables
+
+# ==================================================================== #
+# Command line parser
+# ==================================================================== #
+parser = argparse.ArgumentParser(prog='hdf2hepnos.py',
+            description='C++ class generator for FermiLab\'s HDF5 files')
+parser.add_argument('--input', type=str, required=True,
+        help='input HDF5 file to scan')
+parser.add_argument('--output', type=str, default='.',
+        help='output directory for the generated C++ files')
+parser.add_argument('--namespace', type=str, default='', 
+        help='namespace in which to place C++ classes')
+
+args = parser.parse_args(sys.argv[1:])
+
+# ==================================================================== #
+# Templates and code generation
+# ==================================================================== #
+template_path = os.path.dirname(sys.argv[0])+'/templates'
+env = Environment(
+        loader=FileSystemLoader(template_path)
+        )
+env.filters['as_cpp_identifier'] = as_cpp_identifier
+
+template = env.get_template('table.hpp')
+
+tables = parse_hdf5(args.input)
+
+filenames = []
+for t in tables:
+    code = template.render(table=t, namespace=args.namespace)
+    filename = args.output+'/'+as_cpp_identifier(t.name)+'.hpp'
+    filenames.append(as_cpp_identifier(t.name)+'.hpp')
+    with open(filename,'w+') as f:
+        print("Generating", filename)
+        f.write(code)
+
+with open(args.output+"/_all_.hpp", 'w+') as f:
+    print("Generating _all_.hpp")
+    for filename in filenames:
+        f.write("#include <"+filename+">\n")
