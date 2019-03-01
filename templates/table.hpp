@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include <H5Cpp.h>
+#include <hdf5.h>
 
 {% if namespace|length -%}
 namespace {{ namespace }} {
@@ -48,43 +48,56 @@ struct {{ table.name|as_cpp_identifier }} {
      * @param callback callback to call on each object
      */
     template<typename F>
-    static void from_hdf5(H5::H5File& file, F&& callback) {
+    static void from_hdf5(hid_t file, F&& callback) {
         {{ table.name|as_cpp_identifier }} current;
-        H5::DataSet dataset;
-        H5::DataSpace dataspace;
+        hid_t dataset;
+        hid_t dataspace;
         hsize_t dims[2];
+        herr_t err;
         int ndims;
 
         {% for member in table.members -%}
         std::vector<{{ member.cpptype }}> col_{{ member.name|as_cpp_identifier }}; /* {{ member.name }} column */
-        dataset = file.openDataSet("{{ table.name }}/{{ member.name }}");
-        dataspace = dataset.getSpace();
-        ndims = dataspace.getSimpleExtentDims(dims, NULL);
+        dataset = H5Dopen(file, "{{ table.name }}/{{ member.name }}", H5P_DEFAULT);
+        dataspace = H5Dget_space(dataset);
+        ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
         col_{{ member.name|as_cpp_identifier }}.resize(dims[0]);
-        dataset.read(static_cast<void*>(col_{{ member.name|as_cpp_identifier }}.data()), {{ member.h5type }});
+        err = H5Dread(dataset, {{ member.h5type }}, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                static_cast<void*>(col_{{ member.name|as_cpp_identifier }}.data()));
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
         {% endfor %}
 
         /* column for run indices */
         std::vector<unsigned> col_run;
-        dataset = file.openDataSet("{{ table.name }}/run");
-        dataspace = dataset.getSpace();
-        ndims = dataspace.getSimpleExtentDims(dims, NULL);
+        dataset = H5Dopen(file, "{{ table.name }}/run", H5P_DEFAULT);
+        dataspace = H5Dget_space(dataset);
+        ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
         col_run.resize(dims[0]);
-        dataset.read(static_cast<void*>(col_run.data()), H5::PredType::NATIVE_UINT);
+        err = H5Dread(dataset, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                static_cast<void*>(col_run.data()));
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
         /* column for subrun indices */
         std::vector<unsigned> col_subrun;
-        dataset = file.openDataSet("{{ table.name }}/subrun");
-        dataspace = dataset.getSpace();
-        ndims = dataspace.getSimpleExtentDims(dims, NULL);
+        dataset = H5Dopen(file, "{{ table.name }}/subrun", H5P_DEFAULT);
+        dataspace = H5Dget_space(dataset);
+        ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
         col_subrun.resize(dims[0]);
-        dataset.read(static_cast<void*>(col_subrun.data()), H5::PredType::NATIVE_UINT);
+        err = H5Dread(dataset, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                static_cast<void*>(col_subrun.data()));
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
         /* column for event indices */
         std::vector<unsigned> col_evt;
-        dataset = file.openDataSet("{{ table.name }}/evt");
-        dataspace = dataset.getSpace();
-        ndims = dataspace.getSimpleExtentDims(dims, NULL);
+        dataset = H5Dopen(file, "{{ table.name }}/evt", H5P_DEFAULT);
+        dataspace = H5Dget_space(dataset);
+        ndims = H5Sget_simple_extent_dims(dataspace, dims, NULL);
         col_evt.resize(dims[0]);
-        dataset.read(static_cast<void*>(col_evt.data()), H5::PredType::NATIVE_UINT);
+        err = H5Dread(dataset, H5T_NATIVE_UINT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+                static_cast<void*>(col_evt.data()));
+        H5Sclose(dataspace);
+        H5Dclose(dataset);
 
         for(uint64_t i = 0; i < dims[0]; i++) {
             {% for member in table.members -%}
@@ -96,8 +109,8 @@ struct {{ table.name|as_cpp_identifier }} {
 
     template<typename F>
     static void from_hdf5(const std::string& filename, F&& callback) {
-        H5::H5File file(filename, H5F_ACC_RDONLY);
-        from_hdf5(file, std::forward<F>(callback));
+        hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        from_hdf5(file_id, std::forward<F>(callback));
     }
 };
 

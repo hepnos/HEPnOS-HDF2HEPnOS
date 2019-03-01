@@ -51,16 +51,16 @@ typesizes = {
 Table converting C++ types into HDF5-C++ types.
 """
 cpptype_to_h5cpp = {
-    'float'         : 'H5::PredType::NATIVE_FLOAT',
-    'double'        : 'H5::PredType::NATIVE_DOUBLE',
-    'std::int8_t'   : 'H5::PredType::NATIVE_INT8',
-    'std::int16_t'  : 'H5::PredType::NATIVE_INT16',
-    'std::int32_t'  : 'H5::PredType::NATIVE_INT32',
-    'std::int64_t'  : 'H5::PredType::NATIVE_INT64',
-    'std::uint8_t'  : 'H5::PredType::NATIVE_UINT8',
-    'std::uint16_t' : 'H5::PredType::NATIVE_UINT16',
-    'std::uint32_t' : 'H5::PredType::NATIVE_UINT32',
-    'std::uint64_t' : 'H5::PredType::NATIVE_UINT64'
+    'float'         : 'H5T_NATIVE_FLOAT',
+    'double'        : 'H5T_NATIVE_DOUBLE',
+    'std::int8_t'   : 'H5T_NATIVE_INT8',
+    'std::int16_t'  : 'H5T_NATIVE_INT16',
+    'std::int32_t'  : 'H5T_NATIVE_INT32',
+    'std::int64_t'  : 'H5T_NATIVE_INT64',
+    'std::uint8_t'  : 'H5T_NATIVE_UINT8',
+    'std::uint16_t' : 'H5T_NATIVE_UINT16',
+    'std::uint32_t' : 'H5T_NATIVE_UINT32',
+    'std::uint64_t' : 'H5T_NATIVE_UINT64'
 }
 
 class Member:

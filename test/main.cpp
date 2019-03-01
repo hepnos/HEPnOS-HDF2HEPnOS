@@ -1,5 +1,5 @@
 #include <iostream>
-#include "gen/rec_vtx_elastic_fuzzyk_png2d.hpp"
+#include "rec_vtx_elastic_fuzzyk_png2d.hpp"
 
 void f(unsigned run, unsigned subrun, unsigned event, rec_vtx_elastic_fuzzyk_png2d& obj) {
     static unsigned x = 0;

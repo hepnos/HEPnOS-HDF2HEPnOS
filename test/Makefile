@@ -4,9 +4,9 @@ gen:
 	mkdir gen
 	../hdf2hepnos.py --input test.h5 --output gen
 
-test: gen main.cpp
-	g++ -o myTest main.cpp -I. -lhdf5_cpp -lhdf5
+test: gen1 main.cpp
+	g++ -o myTest -std=c++14 main.cpp -I. -Igen -lhdf5
 
 clean:
-	rm -f yTest
+	rm -f myTest
 	rm -rf gen
