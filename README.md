@@ -8,14 +8,14 @@ and generate C++ code for classes representing data products.
 
 HDF2HEPnOS requires the following dependencies.
 
-* HDF5 with C++ API enabled
+* HDF5
   * Python 3.3 or greater
   * h5py
   * Jinja2
 
 Those can be installed as follows using spack.
 ```
-spack install py-h5py ^python@3.7.0 ^hdf5+cxx
+spack install py-h5py ^python@3.7.0
 spack install py-jinja2 ^python@3.7.0
 ```
 
@@ -44,7 +44,7 @@ HDF2HEPnOS uses [Jinja2](http://jinja.pocoo.org/docs/2.10/) to generate C++ code
 Each group in the input HDF5 file will lead to the generation of a file containing a C++ structure.
 This structure will have the necessary member variables, as well as a _serialize_ template
 method for Boost to use, and two _from_hdf5_ methods to read the data from an HDF5 file using
-HDF5's C++ API.
+HDF5's C API.
 
 Code generation is done as follows.
 
@@ -59,7 +59,7 @@ into a particular namespace.
 ## Using the _from_hdf5_ functions
 
 The _from_hdf5_ functions either take the name of an HDF5 file from which to extract
-the data, or directly the `H5::H5File` object pointing to an opened HDF5 file.
+the data, or directly the `hid_t` file identifier pointing to an opened HDF5 file.
 It also takes a callback to execute on each object read from the file.
 
 ## Example
