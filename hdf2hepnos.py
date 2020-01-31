@@ -132,7 +132,8 @@ args = parser.parse_args(sys.argv[1:])
 # ==================================================================== #
 # Templates and code generation
 # ==================================================================== #
-template_path = os.path.dirname(sys.argv[0])+'/templates'
+template_path = os.path.dirname(os.path.realpath(__file__))+'/templates'
+print(sys.argv[0])
 env = Environment(
         loader=FileSystemLoader(template_path)
         )
