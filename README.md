@@ -8,22 +8,22 @@ and generate C++ code for classes representing data products.
 
 HDF2HEPnOS requires the following dependencies.
 
-* HDF5
+  * HDF5
   * Python 3.3 or greater
   * h5py
   * Jinja2
 
-Those can be installed as follows using spack.
-```
-spack install py-h5py ^python@3.7.0
-spack install py-jinja2 ^python@3.7.0
-```
-
-You must then load these packages.
+You can install HDF2HEPnOS with spack as follows.
+First, clone and add the sds-repo if you don't yet have it:
 
 ```
-spack load -r py-h5py
-spack load -r py-jinja2
+git clone https://xgitlab.cels.anl.gov/sds/sds-repo.git
+spack repo add sds-repo
+```
+
+You can then install HDF5HEPnOS as follows:
+```
+spack install py-hepnos-hdf2hepnos
 ```
 
 ## HDF5 file structure
@@ -49,7 +49,7 @@ HDF5's C API.
 Code generation is done as follows.
 
 ```
-./hdf2hepnos.py --input myHDFfile.h5 --output directory/for/generated/code --namespace ABC
+hdf2hepnos --input myHDFfile.h5 --output directory/for/generated/code --namespace ABC
 ```
 
 If `--output` is ommited, the current working directory is used.
@@ -60,7 +60,9 @@ into a particular namespace.
 
 The _from_hdf5_ functions either take the name of an HDF5 file from which to extract
 the data, or directly the `hid_t` file identifier pointing to an opened HDF5 file.
-It also takes a callback to execute on each object read from the file.
+They also either take a callback to execute on each object read from the file,
+or return an `std::tuple` of four vectors, containing respectively the run numbers,
+subrun numbers, event number, and data product.
 
 ## Example
 
