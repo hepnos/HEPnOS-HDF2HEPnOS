@@ -3,7 +3,7 @@ import os
 import argparse
 import sys
 import h5py
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, PackageLoader
 
 def as_cpp_identifier(name):
     """
@@ -134,9 +134,8 @@ args = parser.parse_args(sys.argv[1:])
 # ==================================================================== #
 template_path = os.path.dirname(os.path.realpath(__file__))+'/templates'
 print(sys.argv[0])
-env = Environment(
-        loader=FileSystemLoader(template_path)
-        )
+env = Environment(loader=PackageLoader('hdf2hepnos', 'templates'))
+        #loader=FileSystemLoader(template_path)
 env.filters['as_cpp_identifier'] = as_cpp_identifier
 
 template = env.get_template('table.hpp')
